@@ -34,9 +34,6 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define TEST_NUM CONFIG_SPINLOCK_MULTITHREAD
-#define THREAD_NUM CONFIG_SPINLOCK_MULTITHREAD
-
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -45,24 +42,34 @@ struct thread_parmeter_s
 {
   FAR int *result;
   FAR spinlock_t *lock;
+  FAR int index;
 };
+
+static int latencys[CONFIG_SPINLOCK_ITERATIONS];
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+extern unsigned long get_current_nanosecond(void);
 
 static FAR void *thread_spinlock(FAR void *parameter)
 {
   FAR int *result = ((FAR struct thread_parmeter_s *)parameter)->result;
   FAR spinlock_t *lock = ((FAR struct thread_parmeter_s *)parameter)->lock;
+  FAR int index = ((FAR struct thread_parmeter_s *)parameter)->index;
 
   int i;
+  unsigned diff;
 
-  for (i = 0; i < TEST_NUM; i++)
+  for (i = 0; i < CONFIG_SPINLOCK_ITERATIONS; i++)
     {
+      diff = get_current_nanosecond();
       spin_lock(lock);
       (*result)++;
       spin_unlock(lock);
+      diff = get_current_nanosecond() - diff;
+      if (index == 0)
+        latencys[i] = diff;
     }
 
   return NULL;
@@ -72,26 +79,31 @@ static FAR void *thread_spinlock(FAR void *parameter)
  * Public Functions
  ****************************************************************************/
 
+
 void main(void)
 {
   spinlock_t lock = SP_UNLOCKED;
   int result = 0;
-  pthread_t thread[THREAD_NUM];
-  struct thread_parmeter_s para;
+  pthread_t thread[CONFIG_SPINLOCK_MULTITHREAD];
+  struct thread_parmeter_s para[CONFIG_SPINLOCK_MULTITHREAD];
   clock_t start;
   clock_t end;
 
   int status;
   int i;
 
-  para.result = &result;
-  para.lock = &lock;
+  for (i = 0; i < CONFIG_SPINLOCK_MULTITHREAD; ++i)
+    {
+      para[i].result = &result;
+      para[i].lock = &lock;
+      para[i].index = i;
+    }
 
-  start = perf_gettime();
-  for (i = 0; i < THREAD_NUM; ++i)
+  start = get_current_nanosecond();
+  for (i = 0; i < CONFIG_SPINLOCK_MULTITHREAD; ++i)
     {
       status = pthread_create(&thread[i], NULL,
-                              thread_spinlock, &para);
+                              thread_spinlock, &para[i]);
       if (status != 0)
         {
           printf("spinlock_test: ERROR pthread_create failed, status=%d\n",
@@ -100,13 +112,15 @@ void main(void)
         }
     }
 
-  for (i = 0; i < THREAD_NUM; ++i)
+  for (i = 0; i < CONFIG_SPINLOCK_MULTITHREAD; ++i)
     {
       pthread_join(thread[i], NULL);
     }
 
-  end = perf_gettime();
-  assert(result == THREAD_NUM * TEST_NUM);
+  end = get_current_nanosecond();
 
   printf("total_time: %lu\n", end - start);
+
+  for (i = 0; i < CONFIG_SPINLOCK_ITERATIONS; i++)
+    printf("latency: %u\n", latencys[i]);
 }
