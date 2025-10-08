@@ -39,11 +39,13 @@ MAINSRC   = dhrystone/v2.2/dry.c
 ifeq ($(wildcard dhrystone/.git),)
 VERSION ?= master
 dhrystone.zip:
-	$(Q) curl -L https://github.com/Keith-S-Thompson/dhrystone/archive/refs/heads/master.zip -o dhrystone.zip
-	$(Q) unzip -o dhrystone.zip
-	$(Q) mv dhrystone-$(VERSION) dhrystone
-	$(Q) patch -p0 < 0001-dry2.2-Fix-malloc-type-mismatch.patch
-	$(Q) patch -p0 < 0002-dhrystone-fix-redefine-warning.patch
+	#$(Q) curl -L https://github.com/Keith-S-Thompson/dhrystone/archive/refs/heads/master.zip -o dhrystone.zip
+	#$(Q) unzip -o dhrystone.zip
+	$(Q) git clone https://github.com/giacomogroppi/dhrystone
+	#$(Q) mv dhrystone-$(VERSION) dhrystone
+	#$(Q) patch -p0 < 0001-dry2.2-Fix-malloc-type-mismatch.patch
+	#$(Q) patch -p0 < 0002-dhrystone-fix-redefine-warning.patch
+	#$(Q) patch -p1 -N --batch < tmp.patch
 
 context:: dhrystone.zip
 
