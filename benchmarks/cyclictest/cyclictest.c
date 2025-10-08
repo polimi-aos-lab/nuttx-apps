@@ -120,6 +120,10 @@ struct thread_stats_s
   long max;
   long act;
   double avg;
+
+  uint64_t counter;
+  uint64_t *latency;
+  
   unsigned long cycles;
   pthread_t id;
   int tid;
@@ -647,7 +651,9 @@ static void *testthread(void *arg)
           stats->max = diff;
         }
 
+      //printf("Writing in %lu; %p; stats: %p\n", stats->counter, &stats->counter, stats);
       stats->avg += (double) diff;
+      stats->latency[stats->counter++] = diff;
 
       if (config.histogram)
         {
@@ -1023,6 +1029,23 @@ int main(int argc, char *argv[])
           goto main_error;
         }
 
+      if (config.loops == 0) {
+        perror("this code is design to work with finite numer of cycles");
+        ret = ERROR;
+        goto main_error;
+      }
+
+      for (unsigned j = 0; j < config.threads; j++) {
+        stats[j]->latency = calloc (config.loops, sizeof(unsigned long));
+        stats[j]->counter = 0;
+        
+        if (stats[j]->latency == NULL) {
+          perror("stats->latency");
+          ret = ERROR;
+          goto main_error;
+        }
+      }
+
       init_thread_param(params[i], config.interval, config.loops,
                  config.policy, config.prio, stats[i], config.clock);
 
@@ -1068,6 +1091,12 @@ int main(int argc, char *argv[])
       pthread_join(stats[i]->id, NULL);
     }
 
+  for (unsigned j = 0; j < config.threads; j++) {
+    for (i = 0; i < config.loops; i++) {
+      printf("[cycletest] latency: %ld\n", stats[j]->latency[i]);
+    }
+  }
+
   if (config.histogram)
     {
       print_hist(params, config.threads);
@@ -1102,6 +1131,9 @@ main_error:
                 {
                   free(stats[i]->hist_array);
                 }
+
+              if (stats[i]->latency != NULL)
+                free(stats[i]->latency);
 
               free(stats[i]);
             }
