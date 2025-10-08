@@ -145,7 +145,7 @@ endif
 ifeq ($(wildcard coremark-pro/.git),)
 VERSION ?= main
 coremark-pro.zip:
-	$(Q) curl -L https://github.com/eembc/coremark-pro/archive/refs/heads/main.zip -o coremark-pro.zip
+	$(Q) curl -L https://github.com/giacomogroppi/coremark-pro/archive/refs/heads/main.zip -o coremark-pro.zip
 	$(Q) unzip -o coremark-pro.zip
 	$(Q) mv coremark-pro-$(VERSION) coremark-pro
 
