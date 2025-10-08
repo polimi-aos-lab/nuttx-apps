@@ -155,6 +155,8 @@ static const struct option optargs[] =
  * Private Functions
  ****************************************************************************/
 
+extern int get_current_timer_nanoseconds(clockid_t, struct timespec *time);
+
 static void print_help(void)
 {
   puts(
@@ -516,7 +518,7 @@ static void *testthread(void *arg)
 
   /* We can use clock_gettime for the endtime. */
 
-  if ((ret = clock_gettime(param->clock, &now)) < 0)
+  if ((ret = get_current_timer_nanoseconds(param->clock, &now)) < 0)
     {
       goto threadend;
     }
@@ -588,7 +590,7 @@ static void *testthread(void *arg)
                     goto threadend;
                   }
 
-                ret = clock_gettime(param->clock, &next);
+                ret = get_current_timer_nanoseconds(param->clock, &next);
                 if (ret < 0)
                   {
                     goto threadend;
@@ -613,7 +615,7 @@ static void *testthread(void *arg)
       switch (config.meas_method)
         {
           case M_GETTIME:
-            if ((ret = clock_gettime(param->clock, &now)) < 0)
+            if ((ret = get_current_timer_nanoseconds(param->clock, &now)) < 0)
               {
                 goto threadend;
               }
@@ -668,7 +670,7 @@ static void *testthread(void *arg)
 
       if (config.duration != 0)
         {
-          if ((ret = clock_gettime(param->clock, &now)) < 0)
+          if ((ret = get_current_timer_nanoseconds(param->clock, &now)) < 0)
             {
               goto threadend;
             }
