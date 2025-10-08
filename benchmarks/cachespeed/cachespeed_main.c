@@ -42,6 +42,8 @@
 #define CACHESPEED_PREFIX "CACHE Speed: "
 #define REPEAT_NUM 1000
 
+extern int get_current_timer_nanoseconds(clockid_t, struct timespec *time);
+
 #ifdef CACHESPEED_PERFTIME
   #define TIME uint64_t
 
@@ -49,7 +51,7 @@
   do \
   { \
     struct timespec ts; \
-    perf_convert(cost, &ts); \
+    get_current_timer_nanoseconds(cost, &ts); \
     cost = ts.tv_sec * 1000000000 + ts.tv_nsec; \
   } while (0)
 
@@ -63,7 +65,7 @@
   do \
   { \
     struct timespec ts; \
-    clock_gettime(CLOCK_MONOTONIC, &ts); \
+    get_current_timer_nanoseconds(CLOCK_MONOTONIC, &ts); \
     x = ts.tv_sec * 1000000000 + ts.tv_nsec; \
   } while (0)
 #endif
@@ -103,6 +105,9 @@ static void setup(FAR struct cachespeed_s *cs)
    * memset range to be as large as possible in our tests to ensure
    * that the cache is filled with our dirty data
    */
+
+  // we want to allocate 0x40000 byte of memory
+  info.fordblks = (1UL << 18);
 
   cs->alloc = info.fordblks / 2;
   cs->addr = (uintptr_t)malloc(cs->alloc);
@@ -213,6 +218,7 @@ static void test_skeleton(FAR struct cachespeed_s *cs,
 
 static void cachespeed_common(struct cachespeed_s *cs)
 {
+  printf("Start\n");
   test_skeleton(cs, GET_DCACHE_SIZE, GET_DCACHE_LINE, 1,
                 up_invalidate_dcache, "dcache invalidate");
   test_skeleton(cs, GET_DCACHE_SIZE, GET_DCACHE_LINE, 0,
@@ -247,7 +253,9 @@ int main(int argc, FAR char *argv[])
       .alloc = 0
     };
 
+  printf("start setup\n");
   setup(&cs);
+  printf("start cachespeed_common\n");
   cachespeed_common(&cs);
   teardown(&cs);
   return 0;
