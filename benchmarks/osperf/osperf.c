@@ -43,11 +43,18 @@
 /****************************************************************************
  * Private Types
  ****************************************************************************/
+extern unsigned long get_current_nanosecond(void);
+
+#define TIMESTAMP(x) \
+  do \
+  { \
+    x = get_current_nanosecond(); \
+  } while (0)
 
 struct performance_time_s
 {
-  clock_t start;
-  clock_t end;
+  unsigned long start;
+  unsigned long end;
 };
 
 struct performance_thread_s
@@ -113,19 +120,17 @@ static int performance_thread_create(FAR void *(*entry)(FAR void *),
 
 static void performance_start(FAR struct performance_time_s *result)
 {
-  result->start = perf_gettime();
+  TIMESTAMP(result->start);
 }
 
 static void performance_end(FAR struct performance_time_s *result)
 {
-  result->end = perf_gettime();
+  TIMESTAMP(result->end);
 }
 
 static size_t performance_gettime(FAR struct performance_time_s *result)
 {
-  struct timespec ts;
-  perf_convert(result->end - result->start, &ts);
-  return ts.tv_sec * NSEC_PER_SEC + ts.tv_nsec;
+  return result->end - result->start;
 }
 
 /****************************************************************************
