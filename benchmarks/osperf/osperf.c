@@ -88,14 +88,14 @@ static size_t sempost_performance(void);
 
 static const struct performance_entry_s g_entry_list[] =
 {
-  {"pthread-create", pthread_create_performance},
-  {"pthread-switch", pthread_switch_performance},
-  {"context-switch", context_switch_performance},
-  {"hpwork", hpwork_performance},
-  {"poll-write", poll_performance},
-  {"pipe-rw", pipe_performance},
-  {"semwait", semwait_performance},
-  {"sempost", sempost_performance},
+  {"pthread_create_performance", pthread_create_performance},
+  {"pthread_switch_performance", pthread_switch_performance},
+  {"context_switch_performance", context_switch_performance},
+  {"hpwork_performance", hpwork_performance},
+  {"poll_performance", poll_performance},
+  {"pipe_performance", pipe_performance},
+  {"semwait_performance", semwait_performance},
+  {"sempost_performance", sempost_performance},
 };
 
 /****************************************************************************
@@ -381,8 +381,6 @@ static void performance_run(const FAR struct performance_entry_s *item,
                             size_t count, bool detail)
 {
   size_t total = 0;
-  size_t max = 0;
-  size_t min = 0;
   size_t i;
 
   for (i = 0; i < count; i++)
@@ -392,24 +390,9 @@ static void performance_run(const FAR struct performance_entry_s *item,
       leave_critical_section(flags);
 
       total += time;
-      if (time > max)
-        {
-          max = time;
-        }
 
-      if (time < min || min == 0)
-        {
-          min = time;
-        }
-
-      if (detail)
-        {
-          printf("\t%zu: %zu\n", i, time);
-        }
+      printf("[osperf] %s %lu\n", item->name, time);
     }
-
-  printf("%-*s %10zu %10zu %10zu\n", NAME_MAX, item->name, max, min,
-         total / count);
 }
 
 /****************************************************************************
@@ -450,7 +433,7 @@ int main(int argc, FAR char *argv[])
 {
   const FAR struct performance_entry_s *item = NULL;
   bool detail = false;
-  size_t count = 100;
+  size_t count = 2000;
   size_t i;
   int opt;
 
