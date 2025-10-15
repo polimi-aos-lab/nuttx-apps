@@ -1093,7 +1093,7 @@ int main(int argc, char *argv[])
 
   for (unsigned j = 0; j < config.threads; j++) {
     for (i = 0; i < config.loops; i++) {
-      printf("[cycletest] latency: %ld\n", stats[j]->latency[i]);
+      printf("[cycletest] %ld\n", stats[j]->latency[i]);
     }
   }
 
