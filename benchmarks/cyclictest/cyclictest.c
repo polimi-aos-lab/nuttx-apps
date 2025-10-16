@@ -830,13 +830,13 @@ static void print_hist(struct thread_param_s *par[], int nthreads)
 
 static void print_stat(struct thread_param_s *par, int index)
 {
-  struct thread_stats_s *stat = par->stats;
-  char *fmt;
-  fmt = "T:%2d (%5d) P:%2d I:%ld C:%7lu "
-        "Min:%7ld Act:%5ld Avg:%5ld Max:%8ld\n";
-  printf(fmt, index, stat->tid, par->prio, par->interval, stat->cycles,
-         stat->min, stat->act,
-         stat->cycles ? (long)(stat->avg / stat->cycles) : 0, stat->max);
+  //struct thread_stats_s *stat = par->stats;
+  //char *fmt;
+  //fmt = "T:%2d (%5d) P:%2d I:%ld C:%7lu "
+  //      "Min:%7ld Act:%5ld Avg:%5ld Max:%8ld\n";
+  //printf(fmt, index, stat->tid, par->prio, par->interval, stat->cycles,
+  //       stat->min, stat->act,
+  //       stat->cycles ? (long)(stat->avg / stat->cycles) : 0, stat->max);
 }
 
 /****************************************************************************
@@ -1082,7 +1082,7 @@ int main(int argc, char *argv[])
         }
       else if (!config.quiet)
         {
-          printf("\x1B[%dA", config.threads);
+          //printf("\x1B[%dA", config.threads);
         }
     }
 
@@ -1091,11 +1091,13 @@ int main(int argc, char *argv[])
       pthread_join(stats[i]->id, NULL);
     }
 
+  printf("---- start test ----\n");
   for (unsigned j = 0; j < config.threads; j++) {
     for (i = 0; i < config.loops; i++) {
-      printf("[cycletest] %ld\n", stats[j]->latency[i]);
+      printf("[cycletest] wake-up %ld\n", stats[j]->latency[i]);
     }
   }
+  printf("---- stop test ----\n");
 
   if (config.histogram)
     {
