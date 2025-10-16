@@ -153,8 +153,6 @@ static void test_skeleton(FAR struct cachespeed_s *cs,
                           const char *name)
 {
   size_t update_size;
-  printf("** %s [rate, avg, cost] in nanoseconds(bytes/nesc) %s **\n",
-         name, align ? "align" : "unalign");
 
   if (!align)
     {
