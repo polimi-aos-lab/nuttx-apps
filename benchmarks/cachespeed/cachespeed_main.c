@@ -136,28 +136,9 @@ static void teardown(FAR struct cachespeed_s *cs)
  * Name: report_line
  ****************************************************************************/
 
-static void report_line(size_t bytes, TIME cost)
+static void report_line(const char *name, size_t bytes, TIME cost)
 {
-  double rate;
-
-  /* There is a situation: if the time is 0, then the
-   * calculated speed is wrong.
-   */
-
-  CONVERT(cost);
-
-  if (cost == 0)
-    {
-      printf(CACHESPEED_PREFIX "%zu bytes cost time too small!\n", bytes);
-      return;
-    }
-
-  /* rate = Test Data Size / Execution Time */
-
-  rate = 1.00 * bytes * REPEAT_NUM / cost;
-
-  printf("%zu Bytes: %4lf, %4" PRIu64", %4" PRIu64"\n\r",
-         bytes, rate, cost / REPEAT_NUM, cost);
+  printf("[cachespeed] %s %lu %lu\n", name, bytes, cost);
 }
 
 /****************************************************************************
@@ -166,7 +147,8 @@ static void report_line(size_t bytes, TIME cost)
 
 static void test_skeleton(FAR struct cachespeed_s *cs,
                           const size_t cache_size,
-                          const size_t cache_line_size, int align,
+                          const size_t cache_line_size, 
+                          int align,
                           void (*func)(uintptr_t, uintptr_t),
                           const char *name)
 {
@@ -197,18 +179,19 @@ static void test_skeleton(FAR struct cachespeed_s *cs,
 
       up_flush_dcache_all();
 
-      irq = enter_critical_section();
       for (int i = 0; i < REPEAT_NUM; i++)
         {
+          irq = enter_critical_section();
           memset((void *)cs->addr, 1, cs->alloc);
           TIMESTAMP(start);
           func(cs->addr, (uintptr_t)(cs->addr + bytes));
           TIMESTAMP(end);
+          leave_critical_section(irq);
+          report_line(name, bytes, end - start);
           cost += end - start;
         }
 
-      leave_critical_section(irq);
-      report_line(bytes, cost);
+      //report_line(bytes, cost);
     }
 }
 
@@ -218,23 +201,31 @@ static void test_skeleton(FAR struct cachespeed_s *cs,
 
 static void cachespeed_common(struct cachespeed_s *cs)
 {
-  printf("Start\n");
+  printf("---- start test ----\n");
   test_skeleton(cs, GET_DCACHE_SIZE, GET_DCACHE_LINE, 1,
-                up_invalidate_dcache, "dcache invalidate");
+                up_invalidate_dcache, "dcache-invalidate-align");
+  
   test_skeleton(cs, GET_DCACHE_SIZE, GET_DCACHE_LINE, 0,
-                up_invalidate_dcache, "dcache invalidate");
+                up_invalidate_dcache, "dcache-invalidate-noalign");
+  
   test_skeleton(cs, GET_DCACHE_SIZE, GET_DCACHE_LINE, 1,
-                up_clean_dcache, "dcache clean");
+                up_clean_dcache, "dcache-clean-align");
+
   test_skeleton(cs, GET_DCACHE_SIZE, GET_DCACHE_LINE, 0,
-                up_clean_dcache, "dcache clean");
+                up_clean_dcache, "dcache-clean-noalign");
+  
   test_skeleton(cs, GET_DCACHE_SIZE, GET_DCACHE_LINE, 1,
-                up_flush_dcache, "dcache flush");
+                up_flush_dcache, "dcache-flush-align");
+  
   test_skeleton(cs, GET_DCACHE_SIZE, GET_DCACHE_LINE, 0,
-                up_flush_dcache, "dcache flush");
+                up_flush_dcache, "dcache-flush-noalign");
+  
   test_skeleton(cs, GET_ICACHE_SIZE, GET_ICACHE_LINE, 1,
-                up_invalidate_icache, "icache invalidate");
+                up_invalidate_icache, "icache-invalidate-align");
+  
   test_skeleton(cs, GET_ICACHE_SIZE, GET_ICACHE_LINE, 0,
-                up_invalidate_icache, "icache invalidate");
+                up_invalidate_icache, "icache-invalidate-noalign");
+  printf("---- stop test ----\n");
 }
 
 /****************************************************************************
