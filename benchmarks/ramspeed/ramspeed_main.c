@@ -38,7 +38,7 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define RAMSPEED_PREFIX "RAM Speed: "
+#define RAMSPEED_PREFIX "ramspeed"
 
 #if defined(UINTPTR_MAX) && UINTPTR_MAX > 0xFFFFFFFF
 #  define MEM_UNIT         uint64_t
@@ -257,12 +257,13 @@ out:
  * Name: get_timestamp
  ****************************************************************************/
 
+extern int get_current_timer_nanoseconds(clockid_t, struct timespec *time);
 static uint32_t get_timestamp(void)
 {
   struct timespec ts;
   uint32_t us;
-  clock_gettime(CLOCK_MONOTONIC, &ts);
-  us = ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
+  get_current_timer_nanoseconds(CLOCK_MONOTONIC, &ts);
+  us = ts.tv_sec * 1000000000 + ts.tv_nsec;
   return us;
 }
 
@@ -428,10 +429,7 @@ static void print_rate(FAR const char *name, uint64_t bytes,
       return;
     }
 
-  rate = (double)bytes / 1024 / (cost_time / 1000000.0);
-  printf(RAMSPEED_PREFIX
-         "%s Rate = %.3f KB/s\t[cost: %.3f ms]\n",
-         name, rate, cost_time / 1000.0f);
+  printf(RAMSPEED_PREFIX " %s_%ld %u\n", name, bytes, cost_time);
 }
 
 /****************************************************************************
@@ -450,21 +448,10 @@ static void memcpy_speed_test(FAR void *dest, FAR const void *src,
   uint64_t total_size;
   irqstate_t flags = 0;
 
-  printf("______memcpy performance______\n");
 
   for (step = 32; step <= size; step <<= 1)
     {
       total_size = (uint64_t)step * (uint64_t)repeat_cnt;
-
-      if (step < 1024)
-        {
-          printf("______Perform %" PRIu32 " Bytes access ______\n", step);
-        }
-      else
-        {
-          printf("______Perform %" PRIu32  " KBytes access ______\n",
-                 step / 1024);
-        }
 
       if (irq_disable)
         {
@@ -494,8 +481,8 @@ static void memcpy_speed_test(FAR void *dest, FAR const void *src,
           ENABLE_IRQ(flags);
         }
 
-      print_rate("system memcpy():\t", total_size, cost_time_system);
-      print_rate("internal memcpy():\t", total_size, cost_time_internal);
+      print_rate("memcpy_speed-system", total_size, cost_time_system);
+      print_rate("memcpy_speed-internal", total_size, cost_time_internal);
     }
 }
 
@@ -515,21 +502,9 @@ static void memset_speed_test(FAR void *dest, uint8_t value,
   uint64_t total_size;
   irqstate_t flags = 0;
 
-  printf("______memset performance______\n");
-
   for (step = 32; step <= size; step <<= 1)
     {
       total_size = (uint64_t)step * (uint64_t)repeat_num;
-
-      if (step < 1024)
-        {
-          printf("______Perform %" PRIu32 " Bytes access______\n", step);
-        }
-      else
-        {
-          printf("______Perform %" PRIu32  " KBytes access______\n",
-                 step / 1024);
-        }
 
       if (irq_disable)
         {
@@ -559,8 +534,8 @@ static void memset_speed_test(FAR void *dest, uint8_t value,
           ENABLE_IRQ(flags);
         }
 
-      print_rate("system memset():\t", total_size, cost_time_system);
-      print_rate("internal memset():\t", total_size, cost_time_internal);
+      print_rate("memset_speed-system", total_size, cost_time_system);
+      print_rate("memset_speed-internal", total_size, cost_time_internal);
     }
 }
 
@@ -578,6 +553,7 @@ int main(int argc, FAR char *argv[])
 
   parse_commandline(argc, argv, &ramspeed);
 
+  printf("---- start test ----\n");
   if (ramspeed.src != NULL)
     {
       memcpy_speed_test(ramspeed.dest, ramspeed.src,
@@ -588,6 +564,7 @@ int main(int argc, FAR char *argv[])
   memset_speed_test(ramspeed.dest, ramspeed.value,
                     ramspeed.size, ramspeed.repeat_num,
                     ramspeed.irq_disable);
+  printf("---- stop test ----\n");
 
   /* Check if alloc from heap? */
 

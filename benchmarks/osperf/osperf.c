@@ -481,11 +481,13 @@ int main(int argc, FAR char *argv[])
       return EXIT_SUCCESS;
     }
 
+  printf("---- start test ----\n");
   for (i = 0; i < nitems(g_entry_list); i++)
     {
       item = &g_entry_list[i];
       performance_run(item, count, detail);
     }
+  printf("---- stop test ----\n");
 
   return EXIT_SUCCESS;
 }
