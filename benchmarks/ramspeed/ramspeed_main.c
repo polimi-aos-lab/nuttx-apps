@@ -458,31 +458,25 @@ static void memcpy_speed_test(FAR void *dest, FAR const void *src,
           DISABLE_IRQ(flags);
         }
 
-      start_time = get_timestamp();
 
-      for (cnt = 0; cnt < repeat_cnt; cnt++)
-        {
-          memcpy(dest, src, step);
-        }
-
-      cost_time_system = get_time_elaps(start_time);
-
-      start_time = get_timestamp();
+      for (cnt = 0; cnt < repeat_cnt; cnt++) {
+        start_time = get_timestamp();
+        memcpy(dest, src, step);
+        cost_time_system = get_time_elaps(start_time);
+        print_rate("memcpy_speed-system", total_size, cost_time_system);
+      }
 
       for (cnt = 0; cnt < repeat_cnt; cnt++)
         {
           internal_memcpy(dest, src, step);
         }
 
-      cost_time_internal = get_time_elaps(start_time);
 
       if (irq_disable)
         {
           ENABLE_IRQ(flags);
         }
 
-      print_rate("memcpy_speed-system", total_size, cost_time_system);
-      print_rate("memcpy_speed-internal", total_size, cost_time_internal);
     }
 }
 
@@ -511,14 +505,15 @@ static void memset_speed_test(FAR void *dest, uint8_t value,
           DISABLE_IRQ(flags);
         }
 
-      start_time = get_timestamp();
 
       for (cnt = 0; cnt < repeat_num; cnt++)
         {
+          start_time = get_timestamp();
           memset(dest, value, step);
+          cost_time_system = get_time_elaps(start_time);
+          print_rate("memset_speed-system", total_size, cost_time_system);
         }
 
-      cost_time_system = get_time_elaps(start_time);
 
       start_time = get_timestamp();
 
@@ -527,15 +522,12 @@ static void memset_speed_test(FAR void *dest, uint8_t value,
           internal_memset(dest, value, step);
         }
 
-      cost_time_internal = get_time_elaps(start_time);
-
       if (irq_disable)
         {
           ENABLE_IRQ(flags);
         }
 
-      print_rate("memset_speed-system", total_size, cost_time_system);
-      print_rate("memset_speed-internal", total_size, cost_time_internal);
+      //print_rate("memset_speed-system", total_size, cost_time_system);
     }
 }
 
