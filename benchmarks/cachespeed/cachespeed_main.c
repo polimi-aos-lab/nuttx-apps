@@ -44,31 +44,18 @@
 
 extern int get_current_timer_nanoseconds(clockid_t, struct timespec *time);
 
-#ifdef CACHESPEED_PERFTIME
-  #define TIME uint64_t
 
-  #define CONVERT(cost) \
-  do \
-  { \
-    struct timespec ts; \
-    get_current_timer_nanoseconds(cost, &ts); \
-    cost = ts.tv_sec * 1000000000 + ts.tv_nsec; \
-  } while (0)
+#define TIME time_t
 
-  #define TIMESTAMP(x) (x) = perf_gettime()
-#else
-  #define TIME time_t
+#define CONVERT(cost)
 
-  #define CONVERT(cost)
-
-  #define TIMESTAMP(x) \
-  do \
-  { \
-    struct timespec ts; \
-    get_current_timer_nanoseconds(CLOCK_MONOTONIC, &ts); \
-    x = ts.tv_sec * 1000000000 + ts.tv_nsec; \
-  } while (0)
-#endif
+#define TIMESTAMP(x) \
+do \
+{ \
+  struct timespec ts; \
+  get_current_timer_nanoseconds(CLOCK_MONOTONIC, &ts); \
+  x = ts.tv_sec * 1000000000 + ts.tv_nsec; \
+} while (0)
 
 #define GET_DCACHE_LINE up_get_dcache_linesize()
 #define GET_ICACHE_LINE up_get_icache_linesize()
