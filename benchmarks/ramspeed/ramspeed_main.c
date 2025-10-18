@@ -488,7 +488,16 @@ static void memset_speed_test(FAR void *dest, uint8_t value,
 
   for (step = 32; step <= size; step <<= 1)
     {
-      total_size = (uint64_t)step * (uint64_t)repeat_num;
+      unsigned long *time = malloc (sizeof(*time) * repeat_num);
+
+      {
+        const unsigned long div_factor = 50000000;
+        const unsigned long now = arm_arch_timer_count();
+        const unsigned long sync_time = round((now / div_factor) / 10 + 1) * 10;
+        //printf("original: %lu, now is: %lu; restart at: %lu\n", now, now / div_factor, sync_time);
+        while (sync_time > arm_arch_timer_count() / div_factor) ;
+        //printf("now is: %lu\n", arm_arch_timer_count() / div_factor);
+      }
 
       if (irq_disable)
         {
@@ -500,8 +509,7 @@ static void memset_speed_test(FAR void *dest, uint8_t value,
         {
           start_time = get_current_nanosecond();
           memset(dest, value, step);
-          cost_time_system = get_time_elaps(start_time);
-          print_rate("memset_speed-system", total_size, cost_time_system);
+          time[cnt] = get_time_elaps(start_time);
         }
 
 
@@ -517,7 +525,12 @@ static void memset_speed_test(FAR void *dest, uint8_t value,
           ENABLE_IRQ(flags);
         }
 
-      //print_rate("memset_speed-system", total_size, cost_time_system);
+      for (volatile unsigned i = 0; i < repeat_num; i ++) {
+        #ifndef CONFIG_ONLY_INTERFERENCE
+        print_rate("memcpy_speed-system", step, time[i]);
+        #endif // CONFIG_ONLY_INTERFERENCE
+      }
+      free(time);
     }
 }
 
@@ -538,6 +551,7 @@ int main(int argc, FAR char *argv[])
 #ifndef CONFIG_ONLY_INTERFERENCE
   printf("---- start test ----\n");
 #endif
+  printf("with size: %ld\n", ramspeed.size);
   if (ramspeed.src != NULL)
     {
       memcpy_speed_test(ramspeed.dest, ramspeed.src,
