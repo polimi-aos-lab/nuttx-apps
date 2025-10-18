@@ -27,4 +27,8 @@ config BENCHMARK_RAMSPEED_STACKSIZE
 	int "RAM speed test stack size"
 	default DEFAULT_TASK_STACKSIZE
 
+config ONLY_INTERFERENCE
+	bool "only interference"
+	default false
+
 endif
