@@ -423,13 +423,11 @@ static void memcpy_speed_test(FAR void *dest, FAR const void *src,
   uint32_t cost_time_internal;
   uint32_t cnt;
   uint32_t step;
-  uint64_t total_size;
   irqstate_t flags = 0;
 
 
   for (step = (1UL << 16); step <= size; step <<= 1)
     {
-      total_size = (uint64_t)step * (uint64_t)repeat_cnt;
       unsigned long *time = malloc (sizeof(*time) * repeat_cnt);
 
       if (irq_disable)
@@ -465,7 +463,7 @@ static void memcpy_speed_test(FAR void *dest, FAR const void *src,
 
       for (volatile unsigned i = 0; i < repeat_cnt; i ++) {
         #ifndef CONFIG_ONLY_INTERFERENCE
-        print_rate("memcpy_speed-system", total_size, time[i]);
+        print_rate("memcpy_speed-system", step, time[i]);
         #endif // CONFIG_ONLY_INTERFERENCE
       }
       free(time);
