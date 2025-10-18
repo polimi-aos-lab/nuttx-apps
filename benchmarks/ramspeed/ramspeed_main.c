@@ -253,41 +253,17 @@ out:
     show_usage(argv[0], EXIT_FAILURE);
 }
 
-/****************************************************************************
- * Name: get_timestamp
- ****************************************************************************/
-
 extern int get_current_timer_nanoseconds(clockid_t, struct timespec *time);
-static uint32_t get_timestamp(void)
-{
-  struct timespec ts;
-  uint32_t us;
-  get_current_timer_nanoseconds(CLOCK_MONOTONIC, &ts);
-  us = ts.tv_sec * 1000000000 + ts.tv_nsec;
-  return us;
-}
 
 /****************************************************************************
  * Name: get_time_elaps
  ****************************************************************************/
 
-static uint32_t get_time_elaps(uint32_t prev_time)
+static uint64_t get_time_elaps(uint64_t prev_time)
 {
-  uint32_t act_time = get_timestamp();
-
-  /* If there is no overflow in sys_time simple subtract */
-
-  if (act_time >= prev_time)
-    {
-      prev_time = act_time - prev_time;
-    }
-  else
-    {
-      prev_time = UINT32_MAX - prev_time + 1;
-      prev_time += act_time;
-    }
-
-  return prev_time;
+  unsigned long now = get_current_nanosecond();
+  //printf("diff: %lu\n", now - prev_time);
+  return now - prev_time;
 }
 
 /****************************************************************************
@@ -421,13 +397,13 @@ static void print_rate(FAR const char *name, uint64_t bytes,
                        uint32_t cost_time)
 {
   double rate;
-  if (cost_time == 0)
+  /*if (cost_time == 0)
     {
       printf(RAMSPEED_PREFIX
              "Time-consuming is too short,"
              " please increase the <repeat number>\n");
       return;
-    }
+    }*/
 
   printf(RAMSPEED_PREFIX " %s_%ld %u\n", name, bytes, cost_time);
 }
@@ -436,12 +412,14 @@ static void print_rate(FAR const char *name, uint64_t bytes,
  * Name: memcpy_speed_test
  ****************************************************************************/
 
+extern uint64_t arm_arch_timer_count(void);
+
 static void memcpy_speed_test(FAR void *dest, FAR const void *src,
                               size_t size, uint32_t repeat_cnt,
                               bool irq_disable)
 {
-  uint32_t start_time;
-  uint32_t cost_time_system;
+  uint64_t start_time;
+  uint64_t cost_time_system;
   uint32_t cost_time_internal;
   uint32_t cnt;
   uint32_t step;
@@ -449,21 +427,29 @@ static void memcpy_speed_test(FAR void *dest, FAR const void *src,
   irqstate_t flags = 0;
 
 
-  for (step = 32; step <= size; step <<= 1)
+  for (step = (1UL << 16); step <= size; step <<= 1)
     {
       total_size = (uint64_t)step * (uint64_t)repeat_cnt;
+      unsigned long *time = malloc (sizeof(*time) * repeat_cnt);
 
       if (irq_disable)
         {
           DISABLE_IRQ(flags);
         }
 
+      {
+        const unsigned long div_factor = 50000000;
+        const unsigned long now = arm_arch_timer_count();
+        const unsigned long sync_time = round((now / div_factor) / 10 + 1) * 10;
+        //printf("original: %lu, now is: %lu; restart at: %lu\n", now, now / div_factor, sync_time);
+        while (sync_time > arm_arch_timer_count() / div_factor) ;
+        //printf("now is: %lu\n", arm_arch_timer_count() / div_factor);
+      }
 
       for (cnt = 0; cnt < repeat_cnt; cnt++) {
-        start_time = get_timestamp();
+        start_time = get_current_nanosecond();
         memcpy(dest, src, step);
-        cost_time_system = get_time_elaps(start_time);
-        print_rate("memcpy_speed-system", total_size, cost_time_system);
+        time[cnt] = get_time_elaps(start_time);
       }
 
       for (cnt = 0; cnt < repeat_cnt; cnt++)
@@ -477,6 +463,12 @@ static void memcpy_speed_test(FAR void *dest, FAR const void *src,
           ENABLE_IRQ(flags);
         }
 
+      for (volatile unsigned i = 0; i < repeat_cnt; i ++) {
+        #ifndef CONFIG_ONLY_INTERFERENCE
+        print_rate("memcpy_speed-system", total_size, time[i]);
+        #endif // CONFIG_ONLY_INTERFERENCE
+      }
+      free(time);
     }
 }
 
@@ -508,14 +500,14 @@ static void memset_speed_test(FAR void *dest, uint8_t value,
 
       for (cnt = 0; cnt < repeat_num; cnt++)
         {
-          start_time = get_timestamp();
+          start_time = get_current_nanosecond();
           memset(dest, value, step);
           cost_time_system = get_time_elaps(start_time);
           print_rate("memset_speed-system", total_size, cost_time_system);
         }
 
 
-      start_time = get_timestamp();
+      start_time = get_current_nanosecond();
 
       for (cnt = 0; cnt < repeat_num; cnt++)
         {
@@ -545,7 +537,9 @@ int main(int argc, FAR char *argv[])
 
   parse_commandline(argc, argv, &ramspeed);
 
+#ifndef CONFIG_ONLY_INTERFERENCE
   printf("---- start test ----\n");
+#endif
   if (ramspeed.src != NULL)
     {
       memcpy_speed_test(ramspeed.dest, ramspeed.src,
@@ -553,10 +547,12 @@ int main(int argc, FAR char *argv[])
                         ramspeed.irq_disable);
     }
 
-  memset_speed_test(ramspeed.dest, ramspeed.value,
-                    ramspeed.size, ramspeed.repeat_num,
-                    ramspeed.irq_disable);
+  //memset_speed_test(ramspeed.dest, ramspeed.value,
+  //                  ramspeed.size, ramspeed.repeat_num,
+  //                  ramspeed.irq_disable);
+#ifndef CONFIG_ONLY_INTERFERENCE
   printf("---- stop test ----\n");
+#endif
 
   /* Check if alloc from heap? */
 
