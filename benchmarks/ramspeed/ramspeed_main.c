@@ -145,7 +145,7 @@ static void parse_commandline(int argc, FAR char **argv,
       show_usage(argv[0], EXIT_FAILURE);
     }
 
-  while ((ch = getopt(argc, argv, "r:w:s:v:n:ia")) != ERROR)
+  while ((ch = getopt(argc, argv, "f:r:w:s:v:n:ia")) != ERROR)
     {
       switch (ch)
         {
