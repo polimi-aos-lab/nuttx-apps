@@ -85,6 +85,7 @@ struct ramspeed_s
 {
   FAR void *dest;
   FAR const void *src;
+  size_t size_from;
   size_t size;
   uint8_t value;
   uint32_t repeat_num;
@@ -113,6 +114,7 @@ static void show_usage(FAR const char *progname, int exitcode)
   printf("  -a allocate RW buffers on heap. Overwrites -r and -w option.\n");
   printf("  -r <hex-address> read address.\n");
   printf("  -w <hex-address> write address.\n");
+  printf("  -f <decimal-size> start dimension.\n");
   printf("  -s <decimal-size> number of memory locations (in bytes).\n");
   printf("  -v <hex-value> value to fill in memory"
          " [default value: 0x00].\n");
@@ -168,6 +170,15 @@ static void parse_commandline(int argc, FAR char **argv,
                        info->dest);
                 exit(EXIT_FAILURE);
               }
+            break;
+          case 'f':
+            OPTARG_TO_VALUE(info->size_from, size_t, 10);
+            if (info->size_from < 32)
+              {
+                printf(RAMSPEED_PREFIX "<size> must >= 32\n");
+                exit(EXIT_FAILURE);
+              }
+
             break;
           case 's':
             OPTARG_TO_VALUE(info->size, size_t, 10);
@@ -414,9 +425,13 @@ static void print_rate(FAR const char *name, uint64_t bytes,
 
 extern uint64_t arm_arch_timer_count(void);
 
-static void memcpy_speed_test(FAR void *dest, FAR const void *src,
-                              size_t size, uint32_t repeat_cnt,
-                              bool irq_disable)
+static void memcpy_speed_test(
+                            FAR void *dest, 
+                            FAR const void *src,
+                            size_t size_from,
+                            size_t size, 
+                            uint32_t repeat_cnt,
+                            bool irq_disable)
 {
   uint64_t start_time;
   uint64_t cost_time_system;
@@ -426,7 +441,7 @@ static void memcpy_speed_test(FAR void *dest, FAR const void *src,
   irqstate_t flags = 0;
 
 
-  for (step = (1UL << 16); step <= size; step <<= 1)
+  for (step = size_from; step <= size; step <<= 1)
     {
       unsigned long *time = malloc (sizeof(*time) * repeat_cnt);
 
@@ -435,6 +450,7 @@ static void memcpy_speed_test(FAR void *dest, FAR const void *src,
           DISABLE_IRQ(flags);
         }
 
+      #ifndef CONFIG_ONLY_INTERFERENCE
       {
         const unsigned long div_factor = 50000000;
         const unsigned long now = arm_arch_timer_count();
@@ -443,8 +459,15 @@ static void memcpy_speed_test(FAR void *dest, FAR const void *src,
         while (sync_time > arm_arch_timer_count() / div_factor) ;
         //printf("now is: %lu\n", arm_arch_timer_count() / div_factor);
       }
+      #endif // CONFIG_ONLY_INTERFERENCE
 
-      for (cnt = 0; cnt < repeat_cnt; cnt++) {
+      #ifndef CONFIG_ONLY_INTERFERENCE
+      for (cnt = 0; cnt < repeat_cnt; cnt++) 
+      #else
+      cnt = 0;
+      for (;;)
+      #endif
+      {
         start_time = get_current_nanosecond();
         memcpy(dest, src, step);
         time[cnt] = get_time_elaps(start_time);
@@ -555,7 +578,7 @@ int main(int argc, FAR char *argv[])
   if (ramspeed.src != NULL)
     {
       memcpy_speed_test(ramspeed.dest, ramspeed.src,
-                        ramspeed.size, ramspeed.repeat_num,
+                        ramspeed.size_from, ramspeed.size, ramspeed.repeat_num,
                         ramspeed.irq_disable);
     }
 
