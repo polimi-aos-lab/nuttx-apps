@@ -571,10 +571,11 @@ int main(int argc, FAR char *argv[])
 
   parse_commandline(argc, argv, &ramspeed);
 
+  printf("with: start size: %ld; final size: %ld\n", ramspeed.size_from, ramspeed.size);
+
 #ifndef CONFIG_ONLY_INTERFERENCE
   printf("---- start test ----\n");
 #endif
-  printf("with size: %ld\n", ramspeed.size);
   if (ramspeed.src != NULL)
     {
       memcpy_speed_test(ramspeed.dest, ramspeed.src,
