@@ -451,6 +451,9 @@ static void memcpy_speed_test(
         }
 
       #ifndef CONFIG_ONLY_INTERFERENCE
+      for (cnt = 0; cnt < repeat_cnt; cnt ++)
+        memcpy(dest, src, step);
+      
       for (cnt = 0; cnt < repeat_cnt; cnt++) 
       #else
       cnt = 0;
