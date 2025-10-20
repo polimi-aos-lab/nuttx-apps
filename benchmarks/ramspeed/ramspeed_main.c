@@ -482,7 +482,7 @@ static void memcpy_speed_test(
  * Name: memset_speed_test
  ****************************************************************************/
 
-static void memset_speed_test(FAR void *dest, uint8_t value,
+static void memset_speed_test(FAR void *dest, uint8_t value, size_t size_from,
                               size_t size, uint32_t repeat_num,
                               bool irq_disable)
 {
@@ -494,10 +494,9 @@ static void memset_speed_test(FAR void *dest, uint8_t value,
   uint64_t total_size;
   irqstate_t flags = 0;
 
-  for (step = 32; step <= size; step <<= 1)
+  for (step = size_from; step <= size; step <<= 1)
     {
-      unsigned long *time = malloc (sizeof(*time) * repeat_num);
-
+      #ifndef CONFIG_ONLY_INTERFERENCE
       {
         const unsigned long div_factor = 50000000;
         const unsigned long now = arm_arch_timer_count();
@@ -506,6 +505,7 @@ static void memset_speed_test(FAR void *dest, uint8_t value,
         while (sync_time > arm_arch_timer_count() / div_factor) ;
         //printf("now is: %lu\n", arm_arch_timer_count() / div_factor);
       }
+      #endif
 
       if (irq_disable)
         {
@@ -513,11 +513,17 @@ static void memset_speed_test(FAR void *dest, uint8_t value,
         }
 
 
+      #ifdef CONFIG_ONLY_INTERFERENCE
+      for (;;)
+      #else
       for (cnt = 0; cnt < repeat_num; cnt++)
-        {
+      #endif
+      {
           start_time = get_current_nanosecond();
           memset(dest, value, step);
-          time[cnt] = get_time_elaps(start_time);
+          #ifndef CONFIG_ONLY_INTERFERENCE
+          print_rate("memset_speed-system", step, get_time_elaps(start_time));
+          #endif // CONFIG_ONLY_INTERFERENCE
         }
 
 
@@ -532,13 +538,6 @@ static void memset_speed_test(FAR void *dest, uint8_t value,
         {
           ENABLE_IRQ(flags);
         }
-
-      for (volatile unsigned i = 0; i < repeat_num; i ++) {
-        #ifndef CONFIG_ONLY_INTERFERENCE
-        print_rate("memcpy_speed-system", step, time[i]);
-        #endif // CONFIG_ONLY_INTERFERENCE
-      }
-      free(time);
     }
 }
 
@@ -577,6 +576,7 @@ int main(int argc, FAR char *argv[])
     }
 
   memset_speed_test(ramspeed.dest, ramspeed.value,
+                    ramspeed.size_from,
                     ramspeed.size, ramspeed.repeat_num,
                     ramspeed.irq_disable);
 #ifndef CONFIG_ONLY_INTERFERENCE
