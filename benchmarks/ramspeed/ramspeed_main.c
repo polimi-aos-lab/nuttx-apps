@@ -451,17 +451,6 @@ static void memcpy_speed_test(
         }
 
       #ifndef CONFIG_ONLY_INTERFERENCE
-      {
-        const unsigned long div_factor = 50000000;
-        const unsigned long now = arm_arch_timer_count();
-        const unsigned long sync_time = round((now / div_factor) / 10 + 1) * 10;
-        //printf("original: %lu, now is: %lu; restart at: %lu\n", now, now / div_factor, sync_time);
-        while (sync_time > arm_arch_timer_count() / div_factor) ;
-        //printf("now is: %lu\n", arm_arch_timer_count() / div_factor);
-      }
-      #endif // CONFIG_ONLY_INTERFERENCE
-
-      #ifndef CONFIG_ONLY_INTERFERENCE
       for (cnt = 0; cnt < repeat_cnt; cnt++) 
       #else
       cnt = 0;
@@ -574,6 +563,14 @@ int main(int argc, FAR char *argv[])
   printf("with: start size: %ld; final size: %ld\n", ramspeed.size_from, ramspeed.size);
 
 #ifndef CONFIG_ONLY_INTERFERENCE
+      {
+        const unsigned long div_factor = 50000000;
+        const unsigned long now = arm_arch_timer_count();
+        const unsigned long sync_time = round((now / div_factor) / 10 + 1) * 10;
+        //printf("original: %lu, now is: %lu; restart at: %lu\n", now, now / div_factor, sync_time);
+        while (sync_time > arm_arch_timer_count() / div_factor) ;
+        //printf("now is: %lu\n", arm_arch_timer_count() / div_factor);
+      }
   printf("---- start test ----\n");
 #endif
   if (ramspeed.src != NULL)
@@ -583,9 +580,9 @@ int main(int argc, FAR char *argv[])
                         ramspeed.irq_disable);
     }
 
-  //memset_speed_test(ramspeed.dest, ramspeed.value,
-  //                  ramspeed.size, ramspeed.repeat_num,
-  //                  ramspeed.irq_disable);
+  memset_speed_test(ramspeed.dest, ramspeed.value,
+                    ramspeed.size, ramspeed.repeat_num,
+                    ramspeed.irq_disable);
 #ifndef CONFIG_ONLY_INTERFERENCE
   printf("---- stop test ----\n");
 #endif
