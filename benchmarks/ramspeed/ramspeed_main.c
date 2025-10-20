@@ -516,6 +516,7 @@ static void memset_speed_test(FAR void *dest, uint8_t value, size_t size_from,
       #ifdef CONFIG_ONLY_INTERFERENCE
       for (;;)
       #else
+      memset(dest, value, step);
       for (cnt = 0; cnt < repeat_num; cnt++)
       #endif
       {
