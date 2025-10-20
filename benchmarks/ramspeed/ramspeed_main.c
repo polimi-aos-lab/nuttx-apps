@@ -443,7 +443,6 @@ static void memcpy_speed_test(
 
   for (step = size_from; step <= size; step <<= 1)
     {
-      unsigned long *time = malloc (sizeof(*time) * repeat_cnt);
 
       if (irq_disable)
         {
@@ -451,8 +450,7 @@ static void memcpy_speed_test(
         }
 
       #ifndef CONFIG_ONLY_INTERFERENCE
-      for (cnt = 0; cnt < repeat_cnt; cnt ++)
-        memcpy(dest, src, step);
+      memcpy(dest, src, step);
       
       for (cnt = 0; cnt < repeat_cnt; cnt++) 
       #else
@@ -462,7 +460,9 @@ static void memcpy_speed_test(
       {
         start_time = get_current_nanosecond();
         memcpy(dest, src, step);
-        time[cnt] = get_time_elaps(start_time);
+        #ifndef CONFIG_ONLY_INTERFERENCE
+        print_rate("memcpy_speed-system", step, get_time_elaps(start_time));
+        #endif // CONFIG_ONLY_INTERFERENCE
       }
 
       for (cnt = 0; cnt < repeat_cnt; cnt++)
@@ -475,13 +475,6 @@ static void memcpy_speed_test(
         {
           ENABLE_IRQ(flags);
         }
-
-      for (volatile unsigned i = 0; i < repeat_cnt; i ++) {
-        #ifndef CONFIG_ONLY_INTERFERENCE
-        print_rate("memcpy_speed-system", step, time[i]);
-        #endif // CONFIG_ONLY_INTERFERENCE
-      }
-      free(time);
     }
 }
 
