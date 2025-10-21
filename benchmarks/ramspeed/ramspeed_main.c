@@ -497,14 +497,15 @@ static void memset_speed_test(FAR void *dest, uint8_t value, size_t size_from,
   for (step = size_from; step <= size; step <<= 1)
     {
       #ifndef CONFIG_ONLY_INTERFERENCE
-      {
-        const unsigned long div_factor = 50000000;
-        const unsigned long now = arm_arch_timer_count();
-        const unsigned long sync_time = round((now / div_factor) / 10 + 1) * 10;
-        //printf("original: %lu, now is: %lu; restart at: %lu\n", now, now / div_factor, sync_time);
-        while (sync_time > arm_arch_timer_count() / div_factor) ;
-        //printf("now is: %lu\n", arm_arch_timer_count() / div_factor);
-      }
+      /*{
+         const unsigned long div_factor = 50000000;
+         const unsigned long now = arm_arch_timer_count();
+         const unsigned long sync_time = round((now / div_factor) / 10 + 1) * 10;
+         //printf("original: %lu, now is: %lu; restart at: %lu\n", now, now / div_factor, sync_time);
+         while (sync_time > arm_arch_timer_count() / div_factor) ;
+         //printf("now is: %lu\n", arm_arch_timer_count() / div_factor);
+      }*/
+      for (volatile unsigned long j = 0UL; j < (1UL << 31); j++);
       #endif
 
       if (irq_disable)
