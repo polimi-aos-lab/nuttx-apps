@@ -184,6 +184,7 @@ static void test_skeleton(FAR struct cachespeed_s *cs,
  * Name: cachespeed_common
  ****************************************************************************/
 
+ extern void reboot_test_finished(void);
 static void cachespeed_common(struct cachespeed_s *cs)
 {
   printf("---- start test ----\n");
@@ -211,6 +212,8 @@ static void cachespeed_common(struct cachespeed_s *cs)
   test_skeleton(cs, GET_ICACHE_SIZE, GET_ICACHE_LINE, 0,
                 up_invalidate_icache, "icache-invalidate-noalign");
   printf("---- stop test ----\n");
+  reboot_test_finished();
+
 }
 
 /****************************************************************************

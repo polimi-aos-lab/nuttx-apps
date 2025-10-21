@@ -548,6 +548,7 @@ static void memset_speed_test(FAR void *dest, uint8_t value, size_t size_from,
 /****************************************************************************
  * Name: ramspeed_main
  ****************************************************************************/
+extern void reboot_test_finished(void);
 
 int main(int argc, FAR char *argv[])
 {
@@ -582,6 +583,8 @@ int main(int argc, FAR char *argv[])
 #ifndef CONFIG_ONLY_INTERFERENCE
   printf("---- stop test ----\n");
 #endif
+
+  reboot_test_finished();
 
   /* Check if alloc from heap? */
 

@@ -429,6 +429,7 @@ void performance_list(void)
  * Public Functions
  ****************************************************************************/
 
+ extern void reboot_test_finished(void);
 int main(int argc, FAR char *argv[])
 {
   const FAR struct performance_entry_s *item = NULL;
@@ -488,6 +489,7 @@ int main(int argc, FAR char *argv[])
       performance_run(item, count, detail);
     }
   printf("---- stop test ----\n");
+  reboot_test_finished();
 
   return EXIT_SUCCESS;
 }

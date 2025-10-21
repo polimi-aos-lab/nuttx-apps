@@ -843,6 +843,7 @@ static void print_stat(struct thread_param_s *par, int index)
  * Public Functions
  ****************************************************************************/
 
+ extern void reboot_test_finished(void);
 int main(int argc, char *argv[])
 {
   int i;
@@ -1098,6 +1099,7 @@ int main(int argc, char *argv[])
     }
   }
   printf("---- stop test ----\n");
+  reboot_test_finished();
 
   if (config.histogram)
     {
