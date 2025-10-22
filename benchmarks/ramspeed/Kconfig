@@ -19,6 +19,10 @@ config BENCHMARK_RAMSPEED_PROGNAME
 		This is the name of the program that will be used when the NSH ELF
 		program is installed.
 
+config RAMSPEED_SIZE_MEMORY
+	int "Size memcpy"
+	default 1048576
+
 config BENCHMARK_RAMSPEED_PRIORITY
 	int "RAM speed test task priority"
 	default 100
