@@ -125,7 +125,7 @@ static void teardown(FAR struct cachespeed_s *cs)
 
 static void report_line(const char *name, size_t bytes, TIME cost)
 {
-  printf("[cachespeed] %s %lu %lu\n", name, bytes, cost);
+  printf("[cachespeed] %s_%lu %lu\n", name, bytes, cost);
 }
 
 /****************************************************************************
