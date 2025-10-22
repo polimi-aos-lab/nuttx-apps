@@ -391,7 +391,7 @@ static void performance_run(const FAR struct performance_entry_s *item,
 
       total += time;
 
-      printf("[osperf] %s %lu\n", item->name, time);
+      printf("[osperf] %s_%d %lu\n", item->name, CONFIG_RAMSPEED_SIZE_MEMORY, time);
     }
 }
 
@@ -481,6 +481,8 @@ int main(int argc, FAR char *argv[])
       performance_run(item, count, detail);
       return EXIT_SUCCESS;
     }
+
+  for (volatile unsigned long j = 0UL; j < (1UL << 30); j++) ;
 
   printf("---- start test ----\n");
   for (i = 0; i < nitems(g_entry_list); i++)
