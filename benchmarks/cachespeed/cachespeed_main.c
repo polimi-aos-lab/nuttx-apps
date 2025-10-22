@@ -187,6 +187,7 @@ static void test_skeleton(FAR struct cachespeed_s *cs,
  extern void reboot_test_finished(void);
 static void cachespeed_common(struct cachespeed_s *cs)
 {
+  for (volatile unsigned long j = 0; j < (1UL << 31); j++) ;
   printf("---- start test ----\n");
   test_skeleton(cs, GET_DCACHE_SIZE, GET_DCACHE_LINE, 1,
                 up_invalidate_dcache, "dcache-invalidate-align");
