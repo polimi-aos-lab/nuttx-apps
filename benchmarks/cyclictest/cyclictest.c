@@ -1095,7 +1095,7 @@ int main(int argc, char *argv[])
   printf("---- start test ----\n");
   for (unsigned j = 0; j < config.threads; j++) {
     for (i = 0; i < config.loops; i++) {
-      printf("[cycletest] wake-up %ld\n", stats[j]->latency[i]);
+      printf("[cycletest] wake-up_%d %ld\n", CONFIG_RAMSPEED_SIZE_MEMORY, stats[j]->latency[i]);
     }
   }
   printf("---- stop test ----\n");
