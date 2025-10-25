@@ -448,10 +448,7 @@ static inline void tsnorm(struct timespec *ts)
 
 static inline int64_t timediff_us(struct timespec t1, struct timespec t2)
 {
-  int64_t ret;
-  ret = 1000000 * (int64_t) ((int) t1.tv_sec - (int) t2.tv_sec);
-  ret += (int64_t) ((int) t1.tv_nsec - (int) t2.tv_nsec) / 1000;
-  return ret;
+  return t2.tv_nsec - t1.tv_nsec;
 }
 
 static inline int64_t timediff_us_timer(struct timer_status_s after,
@@ -1095,7 +1092,7 @@ int main(int argc, char *argv[])
   printf("---- start test ----\n");
   for (unsigned j = 0; j < config.threads; j++) {
     for (i = 0; i < config.loops; i++) {
-      printf("[cycletest] wake-up_%d %ld\n", CONFIG_RAMSPEED_SIZE_MEMORY, stats[j]->latency[i]);
+      printf("[cycletest] wake-up_%d %lu\n", CONFIG_RAMSPEED_SIZE_MEMORY, stats[j]->latency[i]);
     }
   }
   printf("---- stop test ----\n");
