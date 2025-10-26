@@ -416,7 +416,7 @@ static void print_rate(FAR const char *name, uint64_t bytes,
       return;
     }*/
 
-  printf(RAMSPEED_PREFIX " %s_%ld %u\n", name, bytes, cost_time);
+  printf(RAMSPEED_PREFIX " %s_%ld_%ld %u\n", name, CONFIG_RAMSPEED_SIZE_MEMORY, bytes, cost_time);
 }
 
 /****************************************************************************
