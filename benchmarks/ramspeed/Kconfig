@@ -35,4 +35,8 @@ config ONLY_INTERFERENCE
 	bool "only interference"
 	default false
 
+config WITH_CACHE_MISSES
+	bool "enable cache misses measurement"
+	default false
+
 endif

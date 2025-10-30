@@ -404,8 +404,15 @@ static void internal_memset(FAR void *dst, uint8_t v, size_t len)
  * Name: print_rate
  ****************************************************************************/
 
-static void print_rate(FAR const char *name, uint64_t bytes,
-                       uint32_t cost_time)
+static void print_rate(FAR const char *name, 
+      uint64_t bytes,
+      uint32_t cost_time,
+      unsigned long l1_cache,
+      unsigned long l2_cache,
+      unsigned long l3_cache,
+      unsigned long tlb_d,
+      unsigned long tlb_i
+    )
 {
   double rate;
   /*if (cost_time == 0)
@@ -416,7 +423,17 @@ static void print_rate(FAR const char *name, uint64_t bytes,
       return;
     }*/
 
+#ifdef CONFIG_WITH_CACHE_MISSES
+  printf(RAMSPEED_PREFIX " %s_%ld %u %lu %lu %lu %lu %lu\n", name, bytes, cost_time, 
+    l1_cache,
+    l2_cache,
+    l3_cache,
+    tlb_d,
+    tlb_i
+  );
+#else
   printf(RAMSPEED_PREFIX " %s_%ld %u\n", name, bytes, cost_time);
+#endif
 }
 
 /****************************************************************************
@@ -443,39 +460,55 @@ static void memcpy_speed_test(
 
   for (step = size_from; step <= size; step <<= 1)
     {
+      #ifndef CONFIG_ONLY_INTERFERENCE
+      unsigned *diffs = malloc (sizeof(*diffs) * repeat_cnt);
+      #endif // CONFIG_ONLY_INTERFERENCE
 
       if (irq_disable)
-        {
           DISABLE_IRQ(flags);
-        }
 
       #ifndef CONFIG_ONLY_INTERFERENCE
       memcpy(dest, src, step);
       
       for (cnt = 0; cnt < repeat_cnt; cnt++) 
       #else
-      cnt = 0;
       for (;;)
-      #endif
+      #endif // CONFIG_ONLY_INTERFERENCE
       {
+        memcpy(dest, src, step);
         start_time = get_current_nanosecond();
+        unsigned long start_l1_cache =  get_l1_cache_misses();
+        unsigned long start_l2_cache =  get_l2_cache_misses();
+        unsigned long start_l3_cache = get_l3_cache_misses();
+
+        unsigned long start_d_tlb_cache = get_tlb_d_misses();
+        unsigned long start_i_tlb_cache = get_tlb_i_misses();
         memcpy(dest, src, step);
         #ifndef CONFIG_ONLY_INTERFERENCE
-        print_rate("memcpy_speed-system", step, get_time_elaps(start_time));
+        print_rate(
+            "memcpy_speed-system", 
+            step, 
+            get_time_elaps(start_time),
+            get_l1_cache_misses() - start_l1_cache,
+            get_l2_cache_misses() - start_l2_cache,
+            get_l3_cache_misses() - start_l3_cache,
+            get_tlb_d_misses()    - start_d_tlb_cache,
+            get_tlb_i_misses()    - start_i_tlb_cache
+        );
+        //diffs[cnt] = get_time_elaps(start_time);
         #endif // CONFIG_ONLY_INTERFERENCE
       }
 
-      for (cnt = 0; cnt < repeat_cnt; cnt++)
-        {
-          internal_memcpy(dest, src, step);
-        }
-
-
       if (irq_disable)
-        {
           ENABLE_IRQ(flags);
-        }
-    }
+
+      #ifndef CONFIG_ONLY_INTERFERENCE
+      //for (cnt = 0; cnt < repeat_cnt; cnt ++)
+      //  print_rate("memcpy_speed-system", step, diffs[cnt]);
+      #endif // CONFIG_ONLY_INTERFERENCE
+      free(diffs);
+
+      }
 }
 
 /****************************************************************************
@@ -524,7 +557,7 @@ static void memset_speed_test(FAR void *dest, uint8_t value, size_t size_from,
           start_time = get_current_nanosecond();
           memset(dest, value, step);
           #ifndef CONFIG_ONLY_INTERFERENCE
-          print_rate("memset_speed-system", step, get_time_elaps(start_time));
+          //print_rate("memset_speed-system", step, get_time_elaps(start_time));
           #endif // CONFIG_ONLY_INTERFERENCE
         }
 
