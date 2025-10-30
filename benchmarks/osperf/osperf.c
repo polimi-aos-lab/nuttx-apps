@@ -88,14 +88,14 @@ static size_t sempost_performance(void);
 
 static const struct performance_entry_s g_entry_list[] =
 {
-  {"pthread_create_performance", pthread_create_performance},
-  {"pthread_switch_performance", pthread_switch_performance},
-  {"context_switch_performance", context_switch_performance},
-  {"hpwork_performance", hpwork_performance},
-  {"poll_performance", poll_performance},
-  {"pipe_performance", pipe_performance},
-  {"semwait_performance", semwait_performance},
-  {"sempost_performance", sempost_performance},
+  {"pthread-create-performance", pthread_create_performance},
+  {"pthread-switch-performance", pthread_switch_performance},
+  {"context-switch-performance", context_switch_performance},
+  {"hpwork-performance", hpwork_performance},
+  {"poll-performance", poll_performance},
+  {"pipe-performance", pipe_performance},
+  {"semwait-performance", semwait_performance},
+  {"sempost-performance", sempost_performance},
 };
 
 /****************************************************************************
