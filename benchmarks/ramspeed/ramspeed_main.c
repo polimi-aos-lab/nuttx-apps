@@ -460,10 +460,6 @@ static void memcpy_speed_test(
 
   for (step = size_from; step <= size; step <<= 1)
     {
-      #ifndef CONFIG_ONLY_INTERFERENCE
-      unsigned *diffs = malloc (sizeof(*diffs) * repeat_cnt);
-      #endif // CONFIG_ONLY_INTERFERENCE
-
       if (irq_disable)
           DISABLE_IRQ(flags);
 
@@ -495,19 +491,11 @@ static void memcpy_speed_test(
             get_tlb_d_misses()    - start_d_tlb_cache,
             get_tlb_i_misses()    - start_i_tlb_cache
         );
-        //diffs[cnt] = get_time_elaps(start_time);
         #endif // CONFIG_ONLY_INTERFERENCE
       }
 
       if (irq_disable)
           ENABLE_IRQ(flags);
-
-      #ifndef CONFIG_ONLY_INTERFERENCE
-      //for (cnt = 0; cnt < repeat_cnt; cnt ++)
-      //  print_rate("memcpy_speed-system", step, diffs[cnt]);
-      #endif // CONFIG_ONLY_INTERFERENCE
-      free(diffs);
-
       }
 }
 
