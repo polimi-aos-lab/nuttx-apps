@@ -482,7 +482,7 @@ static void memcpy_speed_test(
         memcpy(dest, src, step);
         #ifndef CONFIG_ONLY_INTERFERENCE
         print_rate(
-            "memcpy_speed-system", 
+            "memcpy", 
             step, 
             get_time_elaps(start_time),
             get_l1_cache_misses() - start_l1_cache,
