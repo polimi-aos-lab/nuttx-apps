@@ -39,7 +39,7 @@ config WITH_CACHE_MISSES
 	bool "enable cache misses measurement"
 	default false
 
-config CONFIG_RP5_TIMER_DISABLE
+config RP5_TIMER_DISABLE
 	bool "disable timer handler"
 	default false
 
