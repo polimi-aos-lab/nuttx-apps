@@ -457,6 +457,9 @@ static void memcpy_speed_test(
   uint32_t step;
   irqstate_t flags = 0;
 
+  for (step = size_from; step <= size; step <<= 1)
+    for (volatile unsigned i = 0; i < 500; i++)
+      memcpy(dest, src, step);
 
   for (step = size_from; step <= size; step <<= 1)
     {
@@ -582,14 +585,7 @@ int main(int argc, FAR char *argv[])
   printf("with: start size: %ld; final size: %ld\n", ramspeed.size_from, ramspeed.size);
 
 #ifndef CONFIG_ONLY_INTERFERENCE
-      {
-        const unsigned long div_factor = 50000000;
-        const unsigned long now = arm_arch_timer_count();
-        const unsigned long sync_time = round((now / div_factor) / 10 + 1) * 10;
-        //printf("original: %lu, now is: %lu; restart at: %lu\n", now, now / div_factor, sync_time);
-        while (sync_time > arm_arch_timer_count() / div_factor) ;
-        //printf("now is: %lu\n", arm_arch_timer_count() / div_factor);
-      }
+      for (volatile unsigned j = 0; j < (1UL << 29); j++) ;
   printf("---- start test ----\n");
 #endif
   if (ramspeed.src != NULL)
