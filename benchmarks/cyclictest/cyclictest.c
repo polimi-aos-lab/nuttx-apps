@@ -127,6 +127,9 @@ struct thread_stats_s
   uint64_t *l2_miss;
   uint64_t *l3_miss;
   
+  uint64_t *stall_frontend;
+  uint64_t *stall_backend;
+
   unsigned long cycles;
   pthread_t id;
   int tid;
@@ -484,6 +487,9 @@ extern unsigned long get_l1_cache_misses(void);
 extern unsigned long get_l2_cache_misses(void);
 extern unsigned long get_l3_cache_misses(void);
 
+extern unsigned long get_stall_frontend(void);
+extern unsigned long get_stall_backend(void);
+
 static void *testthread(void *arg)
 {
   int ret;
@@ -491,7 +497,10 @@ static void *testthread(void *arg)
   int64_t diff = 0;
   struct timer_status_s stamp1;
   struct timer_status_s stamp2;
+  
   unsigned long real_now, real_next, l1_miss, l2_miss, l3_miss;
+  unsigned long stall_frontend, stall_backend;
+
   struct timespec now;
   struct timespec next;
   struct timespec interval;
@@ -571,6 +580,8 @@ static void *testthread(void *arg)
               l1_miss = get_l1_cache_misses();
               l2_miss = get_l2_cache_misses();
               l3_miss = get_l3_cache_misses();
+              stall_frontend = get_stall_frontend();
+              stall_backend = get_stall_backend();
 
             real_next = real_now;
             next = now;
@@ -636,6 +647,8 @@ static void *testthread(void *arg)
             l1_miss = get_l1_cache_misses() - l1_miss;
             l2_miss = get_l2_cache_misses() - l2_miss;
             l3_miss = get_l3_cache_misses() - l3_miss;
+            stall_frontend = get_stall_frontend() - stall_frontend;
+            stall_backend = get_stall_backend() - stall_backend;
             if ((ret = get_current_timer_nanoseconds(param->clock, &now)) < 0)
               {
                 goto threadend;
@@ -675,6 +688,8 @@ static void *testthread(void *arg)
       stats->l1_miss[stats->counter] = l1_miss;
       stats->l2_miss[stats->counter] = l2_miss;
       stats->l3_miss[stats->counter] = l3_miss;
+      stats->stall_frontend[stats->counter] = stall_frontend;
+      stats->stall_backend[stats->counter] = stall_backend;
 
         stats->counter++;
 
@@ -1078,10 +1093,17 @@ int main(int argc, char *argv[])
         stats[j]->l1_miss = calloc (config.loops, sizeof(unsigned long));
         stats[j]->l2_miss = calloc (config.loops, sizeof(unsigned long));
         stats[j]->l3_miss = calloc (config.loops, sizeof(unsigned long));
+        stats[j]->stall_frontend = calloc (config.loops, sizeof(unsigned long));
+        stats[j]->stall_backend = calloc (config.loops, sizeof(unsigned long));
 
         stats[j]->counter = 0;
 
-        if (stats[j]->latency == NULL || stats[j]->l1_miss == NULL || stats[j]->l2_miss == NULL || stats[j]->l3_miss == NULL) {
+        if (stats[j]->latency == NULL 
+            || stats[j]->l1_miss == NULL 
+            || stats[j]->l2_miss == NULL 
+            || stats[j]->l3_miss == NULL
+            || stats[j]->stall_frontend == NULL
+            || stats[j]->stall_backend == NULL) {
           perror("stats->latency");
           ret = ERROR;
           goto main_error;
@@ -1141,6 +1163,8 @@ int main(int argc, char *argv[])
       printf("[cycletest] l1-miss_%d %lu\n", CONFIG_RAMSPEED_SIZE_MEMORY, stats[j]->l1_miss[i]);
       printf("[cycletest] l2-miss_%d %lu\n", CONFIG_RAMSPEED_SIZE_MEMORY, stats[j]->l2_miss[i]);
       printf("[cycletest] l3-miss_%d %lu\n", CONFIG_RAMSPEED_SIZE_MEMORY, stats[j]->l3_miss[i]);
+      printf("[cycletest] stall-frontend_%d %lu\n", CONFIG_RAMSPEED_SIZE_MEMORY, stats[j]->stall_frontend[i]);
+      printf("[cycletest] stall-backend_%d %lu\n", CONFIG_RAMSPEED_SIZE_MEMORY, stats[j]->stall_backend[i]);
     }
   }
   printf("---- stop test ----\n");
