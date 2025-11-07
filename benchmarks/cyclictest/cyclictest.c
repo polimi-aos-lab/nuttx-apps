@@ -123,6 +123,9 @@ struct thread_stats_s
 
   uint64_t counter;
   uint64_t *latency;
+  uint64_t *l1_miss;
+  uint64_t *l2_miss;
+  uint64_t *l3_miss;
   
   unsigned long cycles;
   pthread_t id;
@@ -476,6 +479,11 @@ static inline int timerdev_getstatus(struct timer_status_s *st)
   return ioctl(timerfd, TCIOC_GETSTATUS, (unsigned long)((uintptr_t)st));
 }
 
+extern unsigned long get_current_nanosecond(void);
+extern unsigned long get_l1_cache_misses(void);
+extern unsigned long get_l2_cache_misses(void);
+extern unsigned long get_l3_cache_misses(void);
+
 static void *testthread(void *arg)
 {
   int ret;
@@ -483,6 +491,7 @@ static void *testthread(void *arg)
   int64_t diff = 0;
   struct timer_status_s stamp1;
   struct timer_status_s stamp2;
+  unsigned long real_now, real_next, l1_miss, l2_miss, l3_miss;
   struct timespec now;
   struct timespec next;
   struct timespec interval;
@@ -490,6 +499,8 @@ static void *testthread(void *arg)
   struct sched_param schedp;
   struct thread_param_s *param = (struct thread_param_s *)arg;
   struct thread_stats_s *stats = param->stats;
+
+  param->interval = 10000;
 
   stats->tid = gettid();
   stats->min = LONG_MAX;
@@ -557,6 +568,11 @@ static void *testthread(void *arg)
                   }
               }
 
+              l1_miss = get_l1_cache_misses();
+              l2_miss = get_l2_cache_misses();
+              l3_miss = get_l3_cache_misses();
+
+            real_next = real_now;
             next = now;
             next.tv_sec += interval.tv_sec;
             next.tv_nsec += interval.tv_nsec;
@@ -616,12 +632,17 @@ static void *testthread(void *arg)
       switch (config.meas_method)
         {
           case M_GETTIME:
+            real_now = get_current_nanosecond();
+            l1_miss = get_l1_cache_misses() - l1_miss;
+            l2_miss = get_l2_cache_misses() - l2_miss;
+            l3_miss = get_l3_cache_misses() - l3_miss;
             if ((ret = get_current_timer_nanoseconds(param->clock, &now)) < 0)
               {
                 goto threadend;
               }
 
             diff = timediff_us(now, next);
+            diff = real_now - real_next;
             break;
           case M_TIMER_API:
             ret = timerdev_getstatus(&stamp2);
@@ -650,7 +671,12 @@ static void *testthread(void *arg)
 
       //printf("Writing in %lu; %p; stats: %p\n", stats->counter, &stats->counter, stats);
       stats->avg += (double) diff;
-      stats->latency[stats->counter++] = diff;
+      stats->latency[stats->counter] = diff;
+      stats->l1_miss[stats->counter] = l1_miss;
+      stats->l2_miss[stats->counter] = l2_miss;
+      stats->l3_miss[stats->counter] = l3_miss;
+
+        stats->counter++;
 
       if (config.histogram)
         {
@@ -868,6 +894,20 @@ int main(int argc, char *argv[])
   config.timer_dev = NULL;
   config.quiet = false;
 
+  argc = 3;
+  char name_program[100] = "ramspeed";
+  char v1_program[100] = "-l";
+  char v2_program[100] = "3000";
+
+  char *pointers[3] = {
+    name_program, v1_program, v2_program
+  };
+
+  argv = pointers;
+
+  for (volatile long unsigned j = 0; j < (1UL << 30); j++) ;
+
+  
   if (!parse_args(argc, argv))
     {
       print_help();
@@ -1035,9 +1075,13 @@ int main(int argc, char *argv[])
 
       for (unsigned j = 0; j < config.threads; j++) {
         stats[j]->latency = calloc (config.loops, sizeof(unsigned long));
+        stats[j]->l1_miss = calloc (config.loops, sizeof(unsigned long));
+        stats[j]->l2_miss = calloc (config.loops, sizeof(unsigned long));
+        stats[j]->l3_miss = calloc (config.loops, sizeof(unsigned long));
+
         stats[j]->counter = 0;
-        
-        if (stats[j]->latency == NULL) {
+
+        if (stats[j]->latency == NULL || stats[j]->l1_miss == NULL || stats[j]->l2_miss == NULL || stats[j]->l3_miss == NULL) {
           perror("stats->latency");
           ret = ERROR;
           goto main_error;
@@ -1093,6 +1137,10 @@ int main(int argc, char *argv[])
   for (unsigned j = 0; j < config.threads; j++) {
     for (i = 0; i < config.loops; i++) {
       printf("[cycletest] wake-up_%d %lu\n", CONFIG_RAMSPEED_SIZE_MEMORY, stats[j]->latency[i]);
+
+      printf("[cycletest] l1-miss_%d %lu\n", CONFIG_RAMSPEED_SIZE_MEMORY, stats[j]->l1_miss[i]);
+      printf("[cycletest] l2-miss_%d %lu\n", CONFIG_RAMSPEED_SIZE_MEMORY, stats[j]->l2_miss[i]);
+      printf("[cycletest] l3-miss_%d %lu\n", CONFIG_RAMSPEED_SIZE_MEMORY, stats[j]->l3_miss[i]);
     }
   }
   printf("---- stop test ----\n");
